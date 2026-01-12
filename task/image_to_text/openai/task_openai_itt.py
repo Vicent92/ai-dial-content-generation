@@ -15,17 +15,42 @@ def start() -> None:
         image_bytes = image_file.read()
     base64_image = base64.b64encode(image_bytes).decode('utf-8')
 
-    # TODO:
-    #  1. Create DialModelClient
-    #  2. Call client to analise image:
-    #    - try with base64 encoded format
-    #    - try with URL: https://a-z-animals.com/media/2019/11/Elephant-male-1024x535.jpg
-    #  ----------------------------------------------------------------------------------------------------------------
-    #  Note: This approach embeds the image directly in the message as base64 data URL! Here we follow the OpenAI
-    #        Specification but since requests are going to the DIAL Core, we can use different models and DIAL Core
-    #        will adapt them to format Gemini or Anthropic is using. In case if we go directly to
-    #        the https://api.anthropic.com/v1/complete we need to follow Anthropic request Specification (the same for gemini)
-    raise NotImplementedError
+    # Create DialModelClient with GPT-4o model
+    client = DialModelClient(
+        endpoint=DIAL_CHAT_COMPLETIONS_ENDPOINT,
+        deployment_name="gpt-4o",
+        api_key=API_KEY
+    )
+
+    # Option 1: Analyze image using base64 encoded format
+    print("\n" + "=" * 50 + " BASE64 IMAGE ANALYSIS " + "=" * 50)
+    base64_data_url = f"data:image/png;base64,{base64_image}"
+
+    message_base64 = ContentedMessage(
+        role=Role.USER,
+        content=[
+            TxtContent(text="What do you see on this picture? Describe it in detail."),
+            ImgContent(image_url=ImgUrl(url=base64_data_url))
+        ]
+    )
+
+    response_base64 = client.get_completion(messages=[message_base64])
+    print(f"\nAI Response (base64): {response_base64.content}")
+
+    # Option 2: Analyze image using URL
+    print("\n" + "=" * 50 + " URL IMAGE ANALYSIS " + "=" * 50)
+    image_url = "https://a-z-animals.com/media/2019/11/Elephant-male-1024x535.jpg"
+
+    message_url = ContentedMessage(
+        role=Role.USER,
+        content=[
+            TxtContent(text="What do you see on this picture? Describe it in detail."),
+            ImgContent(image_url=ImgUrl(url=image_url))
+        ]
+    )
+
+    response_url = client.get_completion(messages=[message_url])
+    print(f"\nAI Response (URL): {response_url.content}")
 
 
 start()
